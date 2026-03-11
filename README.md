@@ -46,13 +46,5 @@ Para conservar tus datos indefinidamente, te sugerimos cambiar a proveedores que
 5. Edita el valor de la variable de entorno `DATABASE_URL` y pega la nueva URL de Supabase/Neon.
 6. Dale a "Save Changes". Render reiniciará la app conectada a la nueva base segura y permanente.
 
----
-
-## 🛠️ Stack Tecnológico
-
-- **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS.
-- **Base de Datos / Backend**: PostgreSQL, Prisma ORM.
-- **Inteligencia Artificial**: OpenAI API (`gpt-4o-mini`).
-- **Almacenamiento (Recibos)**: Cloudinary.
 
 
