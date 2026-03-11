@@ -139,9 +139,10 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
       setStep("confirm");
       setIsScanning(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("OCR Error:", err);
-      setError(err.message || "No se pudo procesar la imagen.");
+      const message = err instanceof Error ? err.message : "No se pudo procesar la imagen.";
+      setError(message);
       setIsScanning(false);
       setProgress(0);
     }

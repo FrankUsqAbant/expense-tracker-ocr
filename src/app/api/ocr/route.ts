@@ -1,26 +1,80 @@
 import { OpenAI } from "openai";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Endpoint de OCR que utiliza OpenAI GPT-4o Mini para extraer datos detallados de recibos.
- * Soporta el procesamiento de imágenes mediante URLs (Cloudinary) o Base64.
+ * Protegido: solo acepta peticiones desde el mismo origen (no desde terceros).
  */
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: Request) {
-  try {
-    const { image } = await req.json();
+/**
+ * Valida que la petición viene del mismo origen de la aplicación.
+ */
+function isValidOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  const referer = req.headers.get("referer");
+  const host = req.headers.get("host");
 
-    if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+  // En producción, verificamos que el origin o referer coincida con nuestro host
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host;
+      if (originHost !== host) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  // Si no hay origin (server-side), verificamos el referer
+  if (!origin && referer) {
+    try {
+      const refererHost = new URL(referer).host;
+      if (refererHost !== host) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  // Si no hay ni origin ni referer, rechazamos (llamada externa directa)
+  if (!origin && !referer) return false;
+
+  return true;
+}
+
+export async function POST(req: NextRequest) {
+  // --- Validación de seguridad ---
+  if (!isValidOrigin(req)) {
+    return NextResponse.json(
+      { error: "Acceso no autorizado" },
+      { status: 403 },
+    );
+  }
+
+  try {
+    const body = await req.json();
+    const { image } = body;
+
+    if (!image || typeof image !== "string") {
+      return NextResponse.json(
+        { error: "Se requiere una imagen válida" },
+        { status: 400 },
+      );
+    }
+
+    // Limitar tamaño del payload (máx ~10MB en base64)
+    if (image.length > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Imagen demasiado grande (máx 10MB)" },
+        { status: 413 },
+      );
     }
 
     // Llamada a la API de OpenAI Vision para analizar la imagen del recibo
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Usamos el modelo mini para eficiencia y menor costo
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "user",
@@ -32,26 +86,27 @@ export async function POST(req: Request) {
             {
               type: "image_url",
               image_url: {
-                url: image, // La URL puede ser de Cloudinary o un string Base64 Data URI
+                url: image,
               },
             },
           ],
         },
       ],
-      response_format: { type: "json_object" }, // Forzamos a que la IA responda en formato JSON válido
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
     if (!content) throw new Error("No response from OpenAI");
 
-    // Devolvemos el objeto JSON extraído directamente al cliente
     return NextResponse.json(JSON.parse(content));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("OpenAI OCR Error:", error);
-    // Manejo de errores 401, 429, etc.
-    return NextResponse.json(
-      { error: error.message },
-      { status: error.status || 500 },
-    );
+    const message =
+      error instanceof Error ? error.message : "Error interno del servidor";
+    const status =
+      error instanceof Error && "status" in error
+        ? (error as Error & { status: number }).status
+        : 500;
+    return NextResponse.json({ error: message }, { status: status || 500 });
   }
 }

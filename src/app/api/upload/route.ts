@@ -1,9 +1,9 @@
 import { v2 as cloudinary } from "cloudinary";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Endpoint para subir imágenes directamente a Cloudinary desde el servidor.
- * Esto asegura que las credenciales no se expongan en el lado del cliente.
+ * Endpoint para subir imágenes a Cloudinary desde el servidor.
+ * Protegido: solo acepta peticiones desde el mismo origen.
  */
 
 cloudinary.config({
@@ -12,27 +12,90 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function POST(req: Request) {
-  try {
-    const { image } = await req.json();
+/**
+ * Valida que la petición viene del mismo origen de la aplicación.
+ */
+function isValidOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  const referer = req.headers.get("referer");
+  const host = req.headers.get("host");
 
-    if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host;
+      if (originHost !== host) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  if (!origin && referer) {
+    try {
+      const refererHost = new URL(referer).host;
+      if (refererHost !== host) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  if (!origin && !referer) return false;
+
+  return true;
+}
+
+export async function POST(req: NextRequest) {
+  // --- Validación de seguridad ---
+  if (!isValidOrigin(req)) {
+    return NextResponse.json(
+      { error: "Acceso no autorizado" },
+      { status: 403 },
+    );
+  }
+
+  try {
+    const body = await req.json();
+    const { image } = body;
+
+    if (!image || typeof image !== "string") {
+      return NextResponse.json(
+        { error: "Se requiere una imagen válida" },
+        { status: 400 },
+      );
     }
 
-    // Subir la imagen (en formato Base64) a la carpeta 'gastos-app' en Cloudinary
+    // Validar que sea un Data URI de imagen válido
+    if (
+      !image.startsWith("data:image/") &&
+      !image.startsWith("https://")
+    ) {
+      return NextResponse.json(
+        { error: "Formato de imagen no válido" },
+        { status: 400 },
+      );
+    }
+
+    // Limitar tamaño (máx ~10MB)
+    if (image.length > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Imagen demasiado grande (máx 10MB)" },
+        { status: 413 },
+      );
+    }
+
+    // Subir la imagen a Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(image, {
       folder: "gastos-app",
-      resource_type: "auto", // Detecta automáticamente si es imagen, etc.
+      resource_type: "auto",
     });
 
-    // Retornamos la URL segura de Cloudinary para que el OCR la procese
     return NextResponse.json({
       url: uploadResponse.secure_url,
       public_id: uploadResponse.public_id,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Cloudinary Upload Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Error interno del servidor";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

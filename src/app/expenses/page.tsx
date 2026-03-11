@@ -43,9 +43,9 @@ function ExpensesContent() {
     }
   }, [searchParams]);
 
-  const addExpense = (data: any) => {
+  const addExpense = (data: Partial<Expense>) => {
     const newExpense: Expense = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       amount: data.amount || 0,
       date: data.date || new Date().toLocaleDateString(),
       merchant: data.merchant || "Nuevo Gasto Escaneado",
