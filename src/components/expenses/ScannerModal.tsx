@@ -3,7 +3,14 @@ import { OCRScanner } from "@/components/ocr-scanner";
 
 interface ScannerModalProps {
   onClose: () => void;
-  onScanComplete: (data: any) => void;
+  onScanComplete: (data: {
+    amount: number;
+    date: string;
+    merchant: string;
+    category: string;
+    imageUrl?: string;
+    items?: Array<{ description: string; quantity: number; price: number }>;
+  }) => void;
 }
 
 export function ScannerModal({ onClose, onScanComplete }: ScannerModalProps) {
