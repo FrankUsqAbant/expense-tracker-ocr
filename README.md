@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GastosApp - OCR Expense Tracker 🚀
 
-## Getting Started
+Gestiona tus gastos con facilidad usando inteligencia artificial y escaneo OCR.
 
-First, run the development server:
+**🌍 URL de Producción:** [https://expense-tracker-ocr-jpmz.onrender.com](https://expense-tracker-ocr-jpmz.onrender.com)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚠️ Aviso Crítico sobre la Base de Datos (Render Free Tier)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Actualmente, este proyecto está utilizando la **Capa Gratuita de Base de Datos de Render**. 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Render **elimina las bases de datos gratuitas automáticamente a los 90 días** de su creación. 
 
-## Learn More
+### ¿Cómo cambiar a una base de datos permanente y gratuita?
 
-To learn more about Next.js, take a look at the following resources:
+Antes de que pasen los 90 días, te recomendamos cambiar la base de datos a un proveedor permanente (como Supabase o Neon.tech) siguiendo estos sencillos pasos:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Crea una cuenta gratuita en [Neon.tech](https://neon.tech/) o [Supabase](https://supabase.com/).
+2. Crea un nuevo proyecto/base de datos PostgreSQL en su plataforma.
+3. Copia la nueva URL de conexión (`postgresql://...`).
+4. Ve al dashboard de Render de este proyecto (`expense-tracker-ocr`).
+5. Ve a la pestaña **Environment**.
+6. Edita la variable `DATABASE_URL` y pega el nuevo enlace.
+7. Guarda los cambios y Render reiniciará la app automáticamente conectada a la nueva base de datos.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El código de la aplicación está preparado para funcionar perfectamente sin hacer ningún cambio en el repositorio, solo cambiando esa variable de entorno.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tecnologías Utilizadas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS
+- **Base de Datos:** PostgreSQL (vía Prisma ORM)
+- **IA / OCR:** OpenAI (`gpt-4o-mini`)
+- **Almacenamiento de Imágenes:** Cloudinary
+
